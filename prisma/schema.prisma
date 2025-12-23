@@ -13,22 +13,28 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
-  documents DocumentMember[]
+  documents      Document[]
+  DocumentMember DocumentMember[]
 }
 
 model Document {
   id        String   @id @default(uuid())
   title     String
+  content   String   @default("")
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  members DocumentMember[]
+  ownerId        String
+  owner          User             @relation(fields: [ownerId], references: [id])
+  DocumentMember DocumentMember[]
 }
 
 model DocumentMember {
-  id         String @id @default(uuid())
-  role       Role
+  id         String   @id @default(uuid())
   userId     String
   documentId String
+  role       String // owner | editor | viewer
+  createdAt  DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id])
   document Document @relation(fields: [documentId], references: [id])
