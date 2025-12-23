@@ -1,28 +1,23 @@
-# Collaborative Editor – Backend
+# 🚀 Collab Backend
 
-This repository contains the backend for a real-time collaborative document editor
-(similar to Google Docs).
+A backend service for a collaboration platform built using **NestJS**, **Prisma**, **PostgreSQL**, and **JWT Authentication**.
 
-## 🚀 Tech Stack
-- Node.js (NestJS)
-- PostgreSQL
-- Redis
-- WebSockets
-- JWT Authentication
+This project currently implements **user authentication** and provides a solid foundation for documents and collaboration features.
 
-## 🧠 Core Responsibilities
-- User authentication & authorization
-- Document management
-- Role-based access control
-- Real-time collaboration (WebSockets)
-- Operation logging & versioning
-- Redis-based presence & pub/sub
+---
+
+## 🧰 Tech Stack
+
+- **Node.js** (v18+ recommended)
+- **NestJS**
+- **TypeScript**
+- **Prisma ORM**
+- **PostgreSQL**
+- **JWT (Passport.js)**
+- **bcrypt**
+- **dotenv**
+
+---
 
 ## 📁 Project Structure
-See folder structure below.
 
-## ⚙️ Setup (Local)
-1. Clone the repo
-2. Install dependencies
-   ```bash
-   npm install

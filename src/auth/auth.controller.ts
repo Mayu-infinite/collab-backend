@@ -9,23 +9,25 @@ import {
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './auth.guard';
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
-  signup(@Body() body: { email: string; password: string }) {
-    return this.authService.signup(body.email, body.password);
+  signup(@Body() dto: SignupDto) {
+    return this.authService.signup(dto.email, dto.password);
   }
 
   @Post('login')
-  login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password);
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.email, dto.password);
   }
 
-  @Get('me')
   @UseGuards(JwtAuthGuard)
+  @Get('me')
   getMe(@Req() req: Request) {
     return req.user;
   }
