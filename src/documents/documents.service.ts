@@ -21,15 +21,48 @@ export class DocumentsService {
     return this.prisma.document.create({ data });
   }
 
-  // GET MY DOCUMENTS
+  // GET ALL DOCUMENTS OF LOGGED-IN USER
   async getMyDocuments(ownerId: string) {
     return this.prisma.document.findMany({
+      where: { ownerId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // GET SINGLE DOCUMENT (OWNER ONLY)
+  async getDocumentById(documentId: string, ownerId: string) {
+    return this.prisma.document.findFirst({
       where: {
+        id: documentId,
         ownerId,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+    });
+  }
+
+  // UPDATE DOCUMENT (OWNER ONLY)
+  async updateDocument(
+    documentId: string,
+    ownerId: string,
+    title?: string,
+    content?: string,
+  ) {
+    const data: any = {};
+
+    if (title !== undefined) data.title = title;
+    if (content !== undefined) data.content = content;
+
+    // ownership check
+    const document = await this.prisma.document.findFirst({
+      where: { id: documentId, ownerId },
+    });
+
+    if (!document) {
+      return null; // later → ForbiddenException
+    }
+
+    return this.prisma.document.update({
+      where: { id: documentId },
+      data,
     });
   }
 }
