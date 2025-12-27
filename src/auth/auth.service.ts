@@ -6,17 +6,20 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
   // 🔐 SIGNUP
-  async signup(email: string, password: string) {
-    // check if user already exists
+  async signup(dto: SignupDto) {
+    const { name, email, password } = dto; // ✅ KEEP name
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -29,18 +32,28 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
+        name,                 // ✅ REQUIRED
         email,
         password: hashedPassword,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
     });
 
-    // never return password
-    const { password: _, ...safeUser } = user;
-    return safeUser;
+    return {
+      message: 'User created successfully',
+      user,
+    };
   }
 
   // 🔑 LOGIN
-  async login(email: string, password: string) {
+  async login(dto: LoginDto) {
+    const { email, password } = dto;
+
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -49,9 +62,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isValid = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordValid) {
+    if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -64,6 +77,11 @@ export class AuthService {
 
     return {
       accessToken,
+      user: {
+        id: user.id,
+        name: user.name,   // ✅ now valid
+        email: user.email,
+      },
     };
   }
 }

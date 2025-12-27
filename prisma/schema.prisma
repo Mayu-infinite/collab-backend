@@ -9,12 +9,13 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
+  name      String
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
 
-  documents      Document[]
-  DocumentMember DocumentMember[]
+  documents        Document[]
+  documentMembers  DocumentMember[]
 }
 
 model Document {
@@ -24,16 +25,17 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ownerId        String
-  owner          User             @relation(fields: [ownerId], references: [id])
-  DocumentMember DocumentMember[]
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  members DocumentMember[]
 }
 
 model DocumentMember {
   id         String   @id @default(uuid())
   userId     String
   documentId String
-  role       String // owner | editor | viewer
+  role       Role
   createdAt  DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id])
