@@ -18,7 +18,7 @@ export class AuthService {
 
   // 🔐 SIGNUP
   async signup(dto: SignupDto) {
-    const { name, email, password } = dto; // ✅ KEEP name
+    const { name, email, password } = dto;
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -32,7 +32,7 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        name,                 // ✅ REQUIRED
+        name,
         email,
         password: hashedPassword,
       },
@@ -68,9 +68,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // ✅ FIXED PAYLOAD (THIS IS THE KEY)
     const payload = {
-      sub: user.id,
-      email: user.email,
+      userId: user.id, // 🔥 MUST be userId
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -79,7 +79,7 @@ export class AuthService {
       accessToken,
       user: {
         id: user.id,
-        name: user.name,   // ✅ now valid
+        name: user.name,
         email: user.email,
       },
     };

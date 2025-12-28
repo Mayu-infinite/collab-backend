@@ -1,68 +1,121 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class DocumentsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ===============================
   // CREATE DOCUMENT
-  async createDocument(ownerId: string, title: string, content?: string) {
-    const data: any = {
-      title,
-      owner: {
-        connect: { id: ownerId },
+  // ===============================
+  async createDocument(
+    ownerId: string,
+    title: string,
+    content = '',
+  ) {
+    return this.prisma.document.create({
+      data: {
+        title,
+        content,
+        owner: {
+          connect: { id: ownerId },
+        },
       },
-    };
-
-    if (content !== undefined) {
-      data.content = content;
-    }
-
-    return this.prisma.document.create({ data });
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 
+  // ===============================
   // GET ALL DOCUMENTS OF LOGGED-IN USER
+  // ===============================
   async getMyDocuments(ownerId: string) {
     return this.prisma.document.findMany({
-      where: { ownerId },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  // GET SINGLE DOCUMENT (OWNER ONLY)
-  async getDocumentById(documentId: string, ownerId: string) {
-    return this.prisma.document.findFirst({
       where: {
-        id: documentId,
-        ownerId,
+        ownerId, // 🔐 user isolation
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
       },
     });
   }
 
+  // ===============================
+  // GET SINGLE DOCUMENT (OWNER ONLY)
+  // ===============================
+  async getDocumentById(
+    documentId: string,
+    ownerId: string,
+  ) {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: documentId,
+        ownerId, // 🔐 ownership enforced
+      },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    return document;
+  }
+
+  // ===============================
   // UPDATE DOCUMENT (OWNER ONLY)
+  // ===============================
   async updateDocument(
     documentId: string,
     ownerId: string,
     title?: string,
     content?: string,
   ) {
-    const data: any = {};
-
-    if (title !== undefined) data.title = title;
-    if (content !== undefined) data.content = content;
-
-    // ownership check
-    const document = await this.prisma.document.findFirst({
-      where: { id: documentId, ownerId },
+    // 🔍 ownership check
+    const exists = await this.prisma.document.findFirst({
+      where: {
+        id: documentId,
+        ownerId,
+      },
+      select: { id: true },
     });
 
-    if (!document) {
-      return null; // later → ForbiddenException
+    if (!exists) {
+      throw new ForbiddenException(
+        'You do not have access to this document',
+      );
     }
 
     return this.prisma.document.update({
       where: { id: documentId },
-      data,
+      data: {
+        ...(title !== undefined && { title }),
+        ...(content !== undefined && { content }),
+      },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        updatedAt: true,
+      },
     });
   }
 }

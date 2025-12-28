@@ -2,7 +2,7 @@ import {
   Controller,
   Post,
   Get,
-  Put,
+  Patch,
   Body,
   UseGuards,
   Req,
@@ -13,54 +13,57 @@ import { JwtAuthGuard } from '../auth/auth.guard';
 import { DocumentsService } from './documents.service';
 
 @Controller('documents')
+@UseGuards(JwtAuthGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+  ) {}
 
-  // POST /documents
-  @UseGuards(JwtAuthGuard)
+  // ✅ CREATE DOCUMENT (ONLY FOR LOGGED-IN USER)
   @Post()
   createDocument(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: { userId: string } },
     @Body() body: { title: string; content?: string },
   ) {
     return this.documentsService.createDocument(
       req.user.userId,
       body.title,
-      body.content,
+      body.content ?? '',
     );
   }
 
-  // GET /documents
-  @UseGuards(JwtAuthGuard)
+  // ✅ GET ONLY MY DOCUMENTS
   @Get()
-  getMyDocuments(@Req() req: Request & { user: any }) {
-    return this.documentsService.getMyDocuments(req.user.userId);
-  }
-
-  // GET /documents/:id
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  getDocumentById(
-    @Param('id') id: string,
-    @Req() req: Request & { user: any },
+  getMyDocuments(
+    @Req() req: Request & { user: { userId: string } },
   ) {
-    return this.documentsService.getDocumentById(
-      id,
+    return this.documentsService.getMyDocuments(
       req.user.userId,
     );
   }
 
-  // PUT /documents/:id
-  @UseGuards(JwtAuthGuard)
-  @Put(':id')
+  // ✅ GET SINGLE DOCUMENT (OWNER ONLY)
+  @Get(':id')
+  getDocumentById(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    return this.documentsService.getDocumentById(
+      id,
+      req.user.userId, // ✅ FIXED (NOT sub)
+    );
+  }
+
+  // ✅ UPDATE DOCUMENT (OWNER ONLY)
+  @Patch(':id')
   updateDocument(
     @Param('id') id: string,
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: { userId: string } },
     @Body() body: { title?: string; content?: string },
   ) {
     return this.documentsService.updateDocument(
       id,
-      req.user.userId,
+      req.user.userId, // ✅ FIXED
       body.title,
       body.content,
     );
