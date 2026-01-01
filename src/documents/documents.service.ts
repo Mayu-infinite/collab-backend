@@ -2,8 +2,8 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class DocumentsService {
@@ -12,17 +12,20 @@ export class DocumentsService {
   // ===============================
   // CREATE DOCUMENT
   // ===============================
-  async createDocument(
-    ownerId: string,
-    title: string,
-    content = '',
-  ) {
+  async createDocument(ownerId: string, title: string, content = "") {
     return this.prisma.document.create({
       data: {
         title,
         content,
         owner: {
           connect: { id: ownerId },
+        },
+
+        members: {
+          create: {
+            userId: ownerId,
+            role: "OWNER",
+          },
         },
       },
       select: {
@@ -44,7 +47,7 @@ export class DocumentsService {
         ownerId, // 🔐 user isolation
       },
       orderBy: {
-        updatedAt: 'desc',
+        updatedAt: "desc",
       },
       select: {
         id: true,
@@ -57,10 +60,7 @@ export class DocumentsService {
   // ===============================
   // GET SINGLE DOCUMENT (OWNER ONLY)
   // ===============================
-  async getDocumentById(
-    documentId: string,
-    ownerId: string,
-  ) {
+  async getDocumentById(documentId: string, ownerId: string) {
     const document = await this.prisma.document.findFirst({
       where: {
         id: documentId,
@@ -74,7 +74,7 @@ export class DocumentsService {
     });
 
     if (!document) {
-      throw new NotFoundException('Document not found');
+      throw new NotFoundException("Document not found");
     }
 
     return document;
@@ -99,9 +99,7 @@ export class DocumentsService {
     });
 
     if (!exists) {
-      throw new ForbiddenException(
-        'You do not have access to this document',
-      );
+      throw new ForbiddenException("You do not have access to this document");
     }
 
     return this.prisma.document.update({

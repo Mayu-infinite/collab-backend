@@ -10,9 +10,9 @@ export class UsersService {
       where: { id: user.id },
       select: {
         id: true,
+        name: true,
         email: true,
         createdAt: true,
-        // ❌ DO NOT select `name` until Prisma client is regenerated
       },
     });
   }
