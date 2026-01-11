@@ -44,7 +44,14 @@ export class DocumentsService {
   async getMyDocuments(ownerId: string) {
     return this.prisma.document.findMany({
       where: {
-        ownerId, // 🔐 user isolation
+        OR: [
+          { ownerId },
+          {
+            members: {
+              some: { userId: ownerId },
+            },
+          },
+        ], // 🔐 user isolation
       },
       orderBy: {
         updatedAt: "desc",
@@ -64,12 +71,20 @@ export class DocumentsService {
     const document = await this.prisma.document.findFirst({
       where: {
         id: documentId,
-        ownerId, // 🔐 ownership enforced
+        OR: [
+          { ownerId },
+          {
+            members: {
+              some: { userId: ownerId },
+            },
+          },
+        ], // 🔐 ownership enforced
       },
       select: {
         id: true,
         title: true,
         content: true,
+        updatedAt: true,
       },
     });
 
@@ -85,21 +100,24 @@ export class DocumentsService {
   // ===============================
   async updateDocument(
     documentId: string,
-    ownerId: string,
+    userId: string,
     title?: string,
     content?: string,
   ) {
     // 🔍 ownership check
-    const exists = await this.prisma.document.findFirst({
+    const member = this.prisma.documentMember.findFirst({
       where: {
-        id: documentId,
-        ownerId,
+        documentId,
+        userId,
+        role: { in: ["OWNER", "EDITOR"] },
       },
       select: { id: true },
     });
 
-    if (!exists) {
-      throw new ForbiddenException("You do not have access to this document");
+    if (!member) {
+      throw new ForbiddenException(
+        "You do not have permission to update this document",
+      );
     }
 
     return this.prisma.document.update({
