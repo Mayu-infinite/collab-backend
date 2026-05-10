@@ -206,6 +206,12 @@ export class DocumentsService {
       data: {
         isCollaborative: false,
         inviteCode: null,
+      },
+
+      select: {
+        id: true,
+        isCollaborative: true,
+        inviteCode: true,
       }
     })
   }
