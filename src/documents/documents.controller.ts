@@ -8,6 +8,7 @@ import {
   Req,
   Param,
   Put,
+  Delete,
 } from "@nestjs/common";
 import { Request } from "express";
 import { JwtAuthGuard } from "../auth/auth.guard";
@@ -16,7 +17,7 @@ import { DocumentsService } from "./documents.service";
 @Controller("documents")
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(private readonly documentsService: DocumentsService) { }
 
   // ✅ CREATE DOCUMENT (ONLY FOR LOGGED-IN USER)
   @Post()
@@ -62,5 +63,38 @@ export class DocumentsController {
       body.title,
       body.content,
     );
+  }
+
+  @Post(":id/collaborate")
+  enableCollaboration(
+    @Param("id") id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.documentsService.enableCollaboration(
+      id,
+      req.user.id
+    )
+  }
+
+  @Delete(":id/collaborate")
+  disableCollaboration(
+    @Param("id") id: string,
+    @Req() req: Request & { user: { id: string } }
+  ) {
+    return this.documentsService.disableCollaboration(
+      id,
+      req.user.id
+    )
+  }
+
+  @Post("join/:inviteCode")
+  joinCollaboration(
+    @Param("inviteCode") inviteCode: string,
+    @Req() req: Request & { user: { id: string } }
+  ) {
+    return this.documentsService.joinCollaboration(
+      inviteCode,
+      req.user.id
+    )
   }
 }

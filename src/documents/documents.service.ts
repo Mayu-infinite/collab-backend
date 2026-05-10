@@ -4,10 +4,11 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { Role } from "@prisma/client";
 
 @Injectable()
 export class DocumentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ===============================
   // CREATE DOCUMENT
@@ -34,6 +35,8 @@ export class DocumentsService {
         content: true,
         createdAt: true,
         updatedAt: true,
+
+        isCollaborative: true,
       },
     });
   }
@@ -85,6 +88,10 @@ export class DocumentsService {
         title: true,
         content: true,
         updatedAt: true,
+
+        isCollaborative: true,
+
+        inviteCode: true
       },
     });
 
@@ -105,7 +112,7 @@ export class DocumentsService {
     content?: string,
   ) {
     // 🔍 ownership check
-    const member = this.prisma.documentMember.findFirst({
+    const member = await this.prisma.documentMember.findFirst({
       where: {
         documentId,
         userId,
@@ -133,5 +140,115 @@ export class DocumentsService {
         updatedAt: true,
       },
     });
+  }
+
+  async enableCollaboration(
+    documentId: string,
+    userId: string,
+  ) {
+    const document =
+      await this.prisma.document.findFirst({
+        where: {
+          id: documentId,
+          ownerId: userId,
+        }
+      });
+
+    if (!document) {
+      throw new ForbiddenException(
+        "Only owner can enable Collaboration"
+      )
+    }
+
+    const inviteCode = crypto.randomUUID()
+
+    return this.prisma.document.update({
+      where: {
+        id: documentId,
+      },
+
+      data: {
+        isCollaborative: true,
+        inviteCode,
+      },
+
+      select: {
+        id: true,
+        isCollaborative: true,
+        inviteCode: true,
+      }
+    })
+  }
+
+  async disableCollaboration(
+    documentId: string,
+    userId: string,
+  ) {
+    const document =
+      await this.prisma.document.findFirst({
+        where: {
+          id: documentId,
+          ownerId: userId,
+        }
+      })
+
+    if (!document) {
+      throw new ForbiddenException(
+        "Only Owner can disable the collaboration"
+      )
+    }
+
+    return this.prisma.document.update({
+      where: {
+        id: documentId
+      },
+
+      data: {
+        isCollaborative: false,
+        inviteCode: null,
+      }
+    })
+  }
+
+  async joinCollaboration(
+    inviteCode: string,
+    userId: string,
+  ) {
+    const document =
+      await this.prisma.document.findFirst({
+        where: {
+          inviteCode: inviteCode,
+          isCollaborative: true,
+        }
+      })
+
+    if (!document) {
+      throw new NotFoundException(
+        "Invalid Collaboration Link"
+      )
+    }
+
+    const existingMember =
+      await this.prisma.documentMember.findFirst({
+        where: {
+          documentId: document.id,
+          userId,
+        }
+      });
+
+    if (!existingMember) {
+      await this.prisma.documentMember.create({
+        data: {
+          documentId: document.id,
+          userId,
+          role: "EDITOR",
+        }
+      })
+    }
+
+    return {
+      id: document.id,
+      title: document.title,
+    };
   }
 }

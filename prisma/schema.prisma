@@ -29,6 +29,10 @@ model Document {
   owner   User   @relation(fields: [ownerId], references: [id])
 
   members DocumentMember[]
+
+  isCollaborative Boolean @default(false)
+
+  inviteCode String? @unique
 }
 
 model DocumentMember {
