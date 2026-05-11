@@ -2,15 +2,16 @@ import {
   Controller,
   Post,
   Get,
-  Patch,
   Body,
   UseGuards,
   Req,
   Param,
   Put,
   Delete,
+  Patch,
 } from "@nestjs/common";
 import { Request } from "express";
+import { Role } from "@prisma/client";
 import { JwtAuthGuard } from "../auth/auth.guard";
 import { DocumentsService } from "./documents.service";
 
@@ -65,6 +66,17 @@ export class DocumentsController {
     );
   }
 
+  @Delete(":id")
+  deleteDocument(
+    @Param("id") id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.documentsService.deleteDocument(
+      id,
+      req.user.id,
+    );
+  }
+
   @Post(":id/collaborate")
   enableCollaboration(
     @Param("id") id: string,
@@ -96,5 +108,33 @@ export class DocumentsController {
       inviteCode,
       req.user.id
     )
+  }
+
+  @Patch(":id/members/:memberId")
+  updateMemberRole(
+    @Param("id") id: string,
+    @Param("memberId") memberId: string,
+    @Req() req: Request & { user: { id: string } },
+    @Body() body: { role: Role },
+  ) {
+    return this.documentsService.updateMemberRole(
+      id,
+      req.user.id,
+      memberId,
+      body.role,
+    );
+  }
+
+  @Delete(":id/members/:memberId")
+  removeMember(
+    @Param("id") id: string,
+    @Param("memberId") memberId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.documentsService.removeMember(
+      id,
+      req.user.id,
+      memberId,
+    );
   }
 }
