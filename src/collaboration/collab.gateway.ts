@@ -33,7 +33,11 @@ type ChatMessagePayload = {
 
 @WebSocketGateway({
   cors: {
-    origin: "*",
+    origin: [
+      "http://localhost:3000",
+      "https://collab-frontend-sigma.vercel.app",
+    ],
+    credentials: true,
   },
 })
 export class CollabGateway {

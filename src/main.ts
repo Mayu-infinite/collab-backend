@@ -1,16 +1,18 @@
-import "dotenv/config";
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
-import { ValidationPipe } from "@nestjs/common";
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
+    origin: [
+      "http://localhost:3000",
+      "https://collab-frontend-sigma.vercel.app",
+    ],
     credentials: true,
   });
 
-  await app.listen(5000);
+  await app.listen(process.env.PORT || 3002);
 }
+
 bootstrap();
